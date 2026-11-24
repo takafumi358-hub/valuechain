@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>バリューチェーン実績｜グットラックshima</title>
+<style>
+:root{
+  --navy:#1e3a5f;--navy2:#2d5b8c;--bar:#b9c9dc;--bg:#edf1f6;--card:#fff;--line:#d8e0ea;
+  --soft:#f4f7fa;--text:#1f2933;--muted:#5f6f82;--ok:#16834f;--ng:#cf3a3a;--accent:#e8720c;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",Meiryo,sans-serif;font-weight:700;font-size:16px;line-height:1.6}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+header{background:var(--navy);color:#fff}
+.head-in{max-width:1100px;margin:0 auto;padding:14px 16px}
+header h1{margin:0;font-size:21px;letter-spacing:.02em}
+header p{margin:2px 0 0;font-size:13px;opacity:.75}
+
+.bar{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line)}
+.bar-in{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.month{display:flex;align-items:center;gap:6px}
+.month button{width:38px;height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:18px}
+.month button:disabled{opacity:.35;cursor:default}
+.month select{height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 10px;font-size:17px}
+.tabs{display:flex;gap:4px;background:var(--soft);padding:4px;border-radius:10px}
+.tabs button{border:0;background:transparent;padding:7px 16px;border-radius:7px;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--navy);color:#fff}
+
+main{max-width:1100px;margin:0 auto;padding:16px 16px 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:17px}
+.note{color:var(--muted);font-size:13px}
+.msg{padding:40px 16px;text-align:center;color:var(--muted)}
+.msg b{display:block;color:var(--text);font-size:18px;margin-bottom:6px}
+
+/* 粗利の進捗 */
+.hero{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:end}
+.lbl{color:var(--muted);font-size:14px}
+.big{font-size:44px;line-height:1.15;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.big small{font-size:18px;margin-left:4px}
+.prog{position:relative;height:14px;background:var(--soft);border-radius:7px;margin:12px 0 6px;overflow:visible}
+.prog i{position:absolute;left:0;top:0;bottom:0;border-radius:7px;background:var(--navy2)}
+.prog i.ok{background:var(--ok)}
+.prog b{position:absolute;top:-5px;bottom:-5px;width:3px;background:var(--accent);border-radius:2px}
+.prog-txt{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:var(--muted);flex-wrap:wrap}
+.compare{display:grid;gap:10px}
+.compare div{background:var(--soft);border-radius:10px;padding:10px 12px}
+.compare strong{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.up{color:var(--ok)}.down{color:var(--ng)}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;border-top:4px solid var(--line)}
+.kpi.ok{border-top-color:var(--ok)}.kpi.ng{border-top-color:var(--ng)}
+.kpi .v{font-size:26px;font-variant-numeric:tabular-nums;line-height:1.3}
+.kpi .g{font-size:13px;color:var(--muted)}
+.kpi.ok .g em{color:var(--ok);font-style:normal}.kpi.ng .g em{color:var(--ng);font-style:normal}
+
+/* 推移グラフ */
+.chart svg{width:100%;height:auto;display:block}
+.chart .b{cursor:pointer}
+.chart text{font-family:inherit;font-weight:700}
+
+/* メニュー */
+.menu-row{display:grid;grid-template-columns:8.5em 1fr 5.5em 4em;gap:10px;align-items:center;padding:5px 0;font-size:15px}
+.menu-row .track{height:12px;background:var(--soft);border-radius:6px;overflow:hidden}
+.menu-row .track i{display:block;height:100%;background:var(--navy2);border-radius:6px}
+.menu-row .n{text-align:right;font-variant-numeric:tabular-nums}
+.menu-row .d{text-align:right;font-size:13px;font-variant-numeric:tabular-nums}
+
+/* 店舗・個人カード */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.unit{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+.unit-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.unit-head h3{margin:0;font-size:18px}
+.chip{display:inline-block;font-size:12px;background:var(--soft);color:var(--muted);border-radius:999px;padding:1px 9px;margin-left:6px;vertical-align:2px}
+.score{font-size:13px;color:var(--muted)}
+.score b{font-size:18px;color:var(--text)}
+.money{display:flex;align-items:baseline;gap:8px;margin-top:6px;flex-wrap:wrap}
+.money .v{font-size:26px;font-variant-numeric:tabular-nums}
+.money .t{font-size:13px;color:var(--muted)}
+.unit .prog{height:10px;margin:8px 0 12px}
+.cells{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cell{background:var(--soft);border-radius:8px;padding:6px 9px}
+.cell .k{font-size:12px;color:var(--muted)}
+.cell .v{font-size:18px;font-variant-numeric:tabular-nums}
+.cell .t{font-size:12px;color:var(--muted)}
+.cell.ng .v{color:var(--ng)}.cell.ok .v{color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chips span{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 9px}
+.link{margin-top:10px;border:0;background:none;color:var(--navy2);cursor:pointer;padding:4px 0;text-decoration:underline;text-underline-offset:3px}
+.hist{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;font-variant-numeric:tabular-nums}
+.hist th,.hist td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right}
+.hist th:first-child,.hist td:first-child{text-align:left}
+.hist th{color:var(--muted);font-size:12px}
+
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.filters label{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
+.filters select{height:36px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 8px;color:var(--text)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:0}
+
+footer{max-width:1100px;margin:0 auto;padding:8px 16px 28px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+@media (max-width:900px){
+  .kpis{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:640px){
+  body{font-size:15px}
+  .bar-in{padding:8px 12px}
+  .month{width:100%;justify-content:space-between}
+  .month select{flex:1}
+  .tabs{width:100%}
+  .tabs button{flex:1;padding:7px 0}
+  main{padding:12px 12px 4px}
+  .hero{grid-template-columns:1fr}
+  .big{font-size:36px}
+  .kpis{grid-template-columns:repeat(2,1fr);gap:10px}
+  .grid{grid-template-columns:1fr}
+  .menu-row{grid-template-columns:7em 1fr 4.8em 3.4em;gap:6px;font-size:14px}
+}
+@media (max-width:400px){
+  .cells{grid-template-columns:repeat(2,1fr)}
+  .kpi .v{font-size:22px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .prog i{transition:width .4s ease}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-in">
+    <h1>バリューチェーン実績</h1>
+    <p>グットラックshima　アシスト営業の月次サマリー</p>
+  </div>
+</header>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="month">
+      <button type="button" id="prev" aria-label="前の月">‹</button>
+      <select id="monthSel" aria-label="対象月"></select>
+      <button type="button" id="next" aria-label="次の月">›</button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="overall" aria-selected="true">全体</button>
+      <button type="button" role="tab" data-tab="stores" aria-selected="false">店舗別</button>
+      <button type="button" role="tab" data-tab="people" aria-selected="false">個人</button>
+    </div>
+  </div>
+</div>
+
+<main id="view"><div class="msg"><b>読み込み中です</b>スプレッドシートから集計しています。</div></main>
+
+<footer>
+  <span id="updated"></span>
+  <span>©M-Creative Lounge合同会社</span>
+</footer>
+
+<script>
+// GASウェブアプリのURL（デプロイ後に貼り替え）
+const GAS_API_URL = 'https://script.google.com/macros/s/XXXXXXXXXXXX/exec';
+
+const state = { data: null, month: '', tab: 'overall', store: '', sort: 'store', open: {} };
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- 指標の計算 ---------- */
+function metrics(x) {
+  const deals = x.deals1 + x.deals2;
+  const props = x.props1 + x.deals2;           // ②は商談＝提案
+  const items = x.items1 + x.items2;
+  return {
+    profit: x.profit, deals, props, items, success: x.success, buy: x.buy,
+    propRate: deals ? props / deals : null,
+    successRate: items ? x.success / items : null,
+    itemsPer: props ? items / props : null,
+    avgProfit: x.success ? x.profit / x.success : null
+  };
+}
+function targetMetrics(t) {
+  if (!t) return null;
+  return Object.assign({}, t, {
+    propRate: t.deals ? t.props / t.deals : null,
+    successRate: t.items ? t.success / t.items : null
+  });
+}
+// 宮部コメントの仮採点：目標を上回った項目に加点（15点満点）
+const WEIGHTS = [['profit',4],['deals',3],['props',2],['propRate',1],['items',1],['success',2],['successRate',2]];
+function score(m, t) {
+  if (!t) return null;
+  return WEIGHTS.reduce((s, [k, w]) => s + (m[k] != null && t[k] != null && m[k] >= t[k] ? w : 0), 0);
+}
+
+/* ---------- 表示用 ---------- */
+const man = (v) => v == null ? '—' : (Math.round(v / 1000) / 10).toLocaleString('ja-JP', {maximumFractionDigits: 1});
+const pct = (v) => v == null ? '—' : Math.round(v * 100) + '%';
+const num = (v, d = 0) => v == null ? '—' : Number(v).toLocaleString('ja-JP', {minimumFractionDigits: d, maximumFractionDigits: d});
+const ymLabel = (ym) => ym.slice(0, 4) + '年' + Number(ym.slice(5)) + '月';
+const status = (v, t) => (v == null || t == null || !t) ? '' : (v >= t ? 'ok' : 'ng');
+function shift(ym, d) {
+  const dt = new Date(Number(ym.slice(0, 4)), Number(ym.slice(5)) - 1 + d, 1);
+  return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0');
+}
+function progress(actual, target) {
+  if (!target) return '';
+  const max = Math.max(actual, target) || 1;
+  const w = Math.min(100, actual / max * 100), g = target / max * 100;
+  return `<div class="prog" role="img" aria-label="目標に対して${pct(actual / target)}"><i class="${actual >= target ? 'ok' : ''}" style="width:${w}%"></i><b style="left:calc(${g}% - 1.5px)"></b></div>`;
+}
+function cell(label, v, t, fmt) {
+  const st = t == null ? '' : status(v, t);
+  return `<div class="cell ${st}"><div class="k">${label}</div><div class="v">${fmt(v)}</div>${t == null ? '' : `<div class="t">目標 ${fmt(t)}</div>`}</div>`;
+}
+
+/* ---------- 全体 ---------- */
+function renderOverall() {
+  const d = state.data, ym = state.month, o = d.overall[ym], g = d.goals;
+  const m = metrics(o);
+  const prev = d.overall[shift(ym, -1)];
+  const yoy = o.profitPrevYear;
+  const mom = prev ? prev.profit : null;
+  const diff = (a, b) => (b == null || !b) ? '<strong>—</strong>' : `<strong class="${a >= b ? 'up' : 'down'}">${a >= b ? '+' : ''}${Math.round((a / b - 1) * 100)}%</strong>`;
+
+  const kpi = (label, v, goal, fmt, goalTxt) => {
+    const st = status(v, goal);
+    return `<div class="kpi ${st}"><div class="lbl">${label}</div><div class="v">${fmt(v)}</div><div class="g">${goalTxt}${st ? `　<em>${st === 'ok' ? '達成' : '未達'}</em>` : ''}</div></div>`;
+  };
+
+  return `
+  <section class="card">
+    <div class="hero">
+      <div>
+        <div class="lbl">${ymLabel(ym)}のアシスト粗利</div>
+        <div class="big">${man(m.profit)}<small>万円</small></div>
+        ${progress(m.profit, g.overallProfit)}
+        <div class="prog-txt"><span>目標 ${man(g.overallProfit)}万円</span><span>達成率 ${pct(m.profit / g.overallProfit)}</span></div>
+      </div>
+      <div class="compare">
+        <div><span class="lbl">前年同月比（${man(yoy)}万円）</span>${diff(m.profit, yoy)}</div>
+        <div><span class="lbl">前月比（${man(mom)}万円）</span>${diff(m.profit, mom)}</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="kpis">
+    ${kpi('商談数', m.deals, null, num, `トラック販売 ${num(o.deals1)}／VCのみ ${num(o.deals2)}`)}
+    ${kpi('提案率', m.propRate, g.proposalRate, pct, `目標 ${pct(g.proposalRate)}`)}
+    ${kpi('平均提案項目数', m.itemsPer, g.itemsPerProposal, v => num(v, 2), `目標 ${num(g.itemsPerProposal, 1)}`)}
+    ${kpi('成約率', m.successRate, g.successRate, pct, `目標 ${pct(g.successRate)}　成約 ${num(m.success)}項目`)}
+    ${kpi('平均粗利', m.avgProfit, g.avgProfit, v => man(v) + '万円', `目標 ${man(g.avgProfit)}万円`)}
+  </div>
+
+  <section class="card chart">
+    <h2>アシスト粗利の推移</h2>
+    <div class="legend"><span><i style="background:var(--navy2)"></i>選択中の月</span><span><i style="background:var(--accent)"></i>目標 ${man(g.overallProfit)}万円</span><span>棒をタップするとその月に切り替わります</span></div>
+    ${trendChart()}
+  </section>
+
+  <section class="card">
+    <h2>メニュー別の成約項目数</h2>
+    <p class="note" style="margin:-6px 0 10px">右端は前年同月との差です。</p>
+    ${menuRows(o.menu, o.menuPrevYear)}
+  </section>`;
+}
+
+function trendChart() {
+  const d = state.data, idx = d.months.indexOf(state.month);
+  const list = d.months.slice(Math.max(0, idx - 11), idx + 1);
+  const goal = d.goals.overallProfit;
+  const vals = list.map(ym => d.overall[ym].profit);
+  const max = Math.max(goal, ...vals) * 1.12;
+  const W = 720, H = 230, top = 22, bottom = 30, left = 8;
+  const bw = (W - left * 2) / list.length;
+  const y = (v) => top + (H - top - bottom) * (1 - v / max);
+  const bars = list.map((ym, i) => {
+    const v = vals[i], x = left + i * bw + bw * 0.18, w = bw * 0.64, sel = ym === state.month;
+    return `<g class="b" data-ym="${ym}" tabindex="0" role="button" aria-label="${ymLabel(ym)} ${man(v)}万円">
+      <rect x="${x}" y="${y(v)}" width="${w}" height="${H - bottom - y(v)}" rx="3" fill="${sel ? 'var(--navy2)' : 'var(--bar)'}"/>
+      ${sel ? `<text x="${x + w / 2}" y="${y(v) - 6}" text-anchor="middle" font-size="13" fill="var(--text)">${man(v)}</text>` : ''}
+      <text x="${x + w / 2}" y="${H - 9}" text-anchor="middle" font-size="12" fill="${sel ? 'var(--text)' : 'var(--muted)'}">${Number(ym.slice(5))}月</text>
+    </g>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="group" aria-label="直近12か月のアシスト粗利">
+    <line x1="0" x2="${W}" y1="${H - bottom}" y2="${H - bottom}" stroke="var(--line)"/>
+    ${bars}
+    <line x1="0" x2="${W}" y1="${y(goal)}" y2="${y(goal)}" stroke="var(--accent)" stroke-width="2" stroke-dasharray="6 4"/>
+  </svg>`;
+}
+
+function menuRows(menu, prevMenu) {
+  const names = state.data.menus.filter(n => (menu[n] || 0) > 0 || (prevMenu && prevMenu[n] > 0));
+  if (!names.length) return '<p class="note">この月の成約はまだありません。</p>';
+  names.sort((a, b) => (menu[b] || 0) - (menu[a] || 0));
+  const total = names.reduce((s, n) => s + (menu[n] || 0), 0) || 1;
+  const max = Math.max(...names.map(n => menu[n] || 0)) || 1;
+  return names.map(n => {
+    const c = menu[n] || 0;
+    const dv = prevMenu ? c - (prevMenu[n] || 0) : null;
+    return `<div class="menu-row"><span>${esc(n)}</span><span class="track"><i style="width:${c / max * 100}%"></i></span>
+      <span class="n">${c}件 <span class="note">${Math.round(c / total * 100)}%</span></span>
+      <span class="d ${dv > 0 ? 'up' : dv < 0 ? 'down' : ''}">${dv == null ? '—' : (dv > 0 ? '+' : '') + dv}</span></div>`;
+  }).join('');
+}
+
+/* ---------- 店舗別 ---------- */
+function renderStores() {
+  const list = state.data.stores[state.month] || [];
+  if (!list.length) return emptyMonth();
+  return `<p class="note" style="margin:0 0 12px">目標は所属メンバーの個人目標の合計です。数値が赤いものは目標未達です。</p>
+  <div class="grid">${list.map(s => {
+    const m = metrics(s), t = targetMetrics(s.target);
+    return `<article class="unit">
+      <div class="unit-head"><h3>${esc(s.store)}<span class="chip">${s.members}名</span></h3>
+        ${t ? `<span class="score">達成率 <b>${pct(m.profit / t.profit)}</b></span>` : ''}</div>
+      <div class="money"><span class="v">${man(m.profit)}万円</span>${t ? `<span class="t">目標 ${man(t.profit)}万円</span>` : '<span class="t">目標未設定</span>'}</div>
+      ${t ? progress(m.profit, t.profit) : '<div style="height:12px"></div>'}
+      <div class="cells">
+        ${cell('商談件数', m.deals, t && t.deals, num)}
+        ${cell('提案件数', m.props, t && t.props, num)}
+        ${cell('提案率', m.propRate, t && t.propRate, pct)}
+        ${cell('提案項目数', m.items, t && t.items, num)}
+        ${cell('成約項目数', m.success, t && t.success, num)}
+        ${cell('成約率', m.successRate, t && t.successRate, pct)}
+      </div>
+      <button type="button" class="link" data-store="${esc(s.store)}">メンバーを見る</button>
+    </article>`;
+  }).join('')}</div>`;
+}
+
+/* ---------- 個人 ---------- */
+function renderPeople() {
+  const all = state.data.people[state.month] || [];
+  if (!all.length) return emptyMonth();
+  const stores = [...new Set(all.map(p => p.store))];
+  let list = all.filter(p => !state.store || p.store === state.store).map(p => {
+    const m = metrics(p), t = targetMetrics(p.target);
+    return { p, m, t, sc: score(m, t), rate: t && t.profit ? m.profit / t.profit : -1 };
+  });
+  if (state.sort === 'profit') list.sort((a, b) => b.m.profit - a.m.profit);
+  if (state.sort === 'rate') list.sort((a, b) => b.rate - a.rate);
+  if (state.sort === 'score') list.sort((a, b) => (b.sc ?? -1) - (a.sc ?? -1));
+
+  return `<div class="filters">
+    <label>店舗 <select id="storeSel"><option value="">すべて</option>${stores.map(s => `<option ${s === state.store ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
+    <label>並び順 <select id="sortSel">
+      ${[['store','店舗順'],['profit','粗利の多い順'],['rate','粗利達成率の高い順'],['score','スコアの高い順']].map(([v, l]) => `<option value="${v}" ${v === state.sort ? 'selected' : ''}>${l}</option>`).join('')}
+    </select></label>
+  </div>
+  <p class="note" style="margin:-4px 0 12px">スコアは目標を上回った項目に加点した15点満点の目安です（粗利4・商談3・提案件数2・提案率1・提案項目数1・成約項目数2・成約率2）。</p>
+  ${list.length ? '' : '<p class="msg">該当する担当者がいません。</p>'}
+  <div class="grid">${list.map(({p, m, t, sc}) => {
+    const menus = Object.keys(p.menu).sort((a, b) => p.menu[b] - p.menu[a]);
+    const open = state.open[p.name];
+    return `<article class="unit">
+      <div class="unit-head"><h3>${esc(p.name)}<span class="chip">${esc(p.store)}</span></h3>
+        ${sc == null ? '<span class="score">目標未設定</span>' : `<span class="score">スコア <b>${sc}</b>／15</span>`}</div>
+      <div class="money"><span class="v">${man(m.profit)}万円</span>${t ? `<span class="t">目標 ${man(t.profit)}万円（${pct(m.profit / t.profit)}）</span>` : ''}</div>
+      ${t ? progress(m.profit, t.profit) : '<div style="height:12px"></div>'}
+      <div class="cells">
+        ${cell('商談件数', m.deals, t && t.deals, num)}
+        ${cell('提案件数', m.props, t && t.props, num)}
+        ${cell('提案率', m.propRate, t && t.propRate, pct)}
+        ${cell('提案項目数', m.items, t && t.items, num)}
+        ${cell('成約項目数', m.success, t && t.success, num)}
+        ${cell('成約率', m.successRate, t && t.successRate, pct)}
+        ${cell('買取提案数', m.buy, t && t.buy, num)}
+      </div>
+      ${menus.length ? `<div class="chips">${menus.map(n => `<span>${esc(n)} ${p.menu[n]}</span>`).join('')}</div>` : ''}
+      <button type="button" class="link" data-person="${esc(p.name)}" aria-expanded="${!!open}">${open ? '推移を閉じる' : '直近6か月の推移を見る'}</button>
+      ${open ? history(p.name) : ''}
+    </article>`;
+  }).join('')}</div>`;
+}
+
+function history(name) {
+  const d = state.data, idx = d.months.indexOf(state.month);
+  const rows = d.months.slice(Math.max(0, idx - 5), idx + 1).reverse().map(ym => {
+    const p = (d.people[ym] || []).find(x => x.name === name);
+    if (!p) return `<tr><td>${ymLabel(ym)}</td><td colspan="4">データなし</td></tr>`;
+    const m = metrics(p);
+    return `<tr><td>${ymLabel(ym)}</td><td>${man(m.profit)}万</td><td>${num(m.deals)}</td><td>${pct(m.propRate)}</td><td>${pct(m.successRate)}</td></tr>`;
+  }).join('');
+  return `<table class="hist"><thead><tr><th>月</th><th>粗利</th><th>商談</th><th>提案率</th><th>成約率</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function emptyMonth() {
+  return `<div class="msg"><b>${ymLabel(state.month)}のデータはまだありません</b>月別集計シートに入力されると表示されます。</div>`;
+}
+
+/* ---------- 画面制御 ---------- */
+function render() {
+  const d = state.data;
+  $('#monthSel').value = state.month;
+  const i = d.months.indexOf(state.month);
+  $('#prev').disabled = i <= 0;
+  $('#next').disabled = i >= d.months.length - 1;
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === state.tab)));
+  $('#view').innerHTML = state.tab === 'overall' ? renderOverall() : state.tab === 'stores' ? renderStores() : renderPeople();
+}
+
+function setMonth(ym) {
+  if (!state.data.months.includes(ym)) return;
+  state.month = ym;
+  render();
+}
+
+function bind() {
+  $('#monthSel').addEventListener('change', e => setMonth(e.target.value));
+  $('#prev').addEventListener('click', () => setMonth(shift(state.month, -1)));
+  $('#next').addEventListener('click', () => setMonth(shift(state.month, 1)));
+  document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+    state.tab = b.dataset.tab; render(); window.scrollTo({top: 0});
+  }));
+  $('#view').addEventListener('click', e => {
+    const bar = e.target.closest('.b');
+    if (bar) return setMonth(bar.dataset.ym);
+    const st = e.target.closest('[data-store]');
+    if (st) { state.store = st.dataset.store; state.tab = 'people'; render(); window.scrollTo({top: 0}); return; }
+    const pe = e.target.closest('[data-person]');
+    if (pe) { state.open[pe.dataset.person] = !state.open[pe.dataset.person]; render(); }
+  });
+  $('#view').addEventListener('keydown', e => {
+    const bar = e.target.closest('.b');
+    if (bar && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setMonth(bar.dataset.ym); }
+  });
+  $('#view').addEventListener('change', e => {
+    if (e.target.id === 'storeSel') { state.store = e.target.value; render(); }
+    if (e.target.id === 'sortSel') { state.sort = e.target.value; render(); }
+  });
+}
+
+async function load() {
+  try {
+    const res = await fetch(GAS_API_URL);
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error || '集計に失敗しました');
+    start(body.data);
+  } catch (err) {
+    $('#view').innerHTML = `<div class="msg"><b>データを読み込めませんでした</b>
+      ${esc(err.message)}<br>GAS_API_URL が正しいか、GASのデプロイで「アクセスできるユーザー」が「全員」になっているか確認してください。</div>`;
+  }
+}
+
+function start(data) {
+  state.data = data;
+  if (!data.months.length) {
+    $('#view').innerHTML = '<div class="msg"><b>表示できる月がありません</b>月別集計シートにデータを入力してください。</div>';
+    return;
+  }
+  $('#monthSel').innerHTML = data.months.slice().reverse().map(ym => `<option value="${ym}">${ymLabel(ym)}</option>`).join('');
+  state.month = data.months[data.months.length - 1];
+  $('#updated').textContent = '集計日時 ' + data.updatedAt;
+  bind();
+  render();
+}
+
+if (window.__VC_DATA__) start(window.__VC_DATA__); else load();
+</script>
+</body>
+</html>
