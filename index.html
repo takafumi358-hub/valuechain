@@ -143,6 +143,43 @@ main{max-width:1100px;margin:0 auto;padding:16px 16px 8px}
 .rp-fb{grid-column:1/-1;background:var(--soft);border-left:4px solid var(--navy2);border-radius:6px;padding:9px 12px;font-size:14px;line-height:1.85;font-weight:500;margin-top:2px}
 .rp-fb .note{font-weight:700}
 
+/* 名前リンク */
+.nm{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:var(--bar);text-decoration-thickness:2px;text-underline-offset:4px}
+.nm:hover{color:var(--navy2);text-decoration-color:var(--navy2)}
+.nm::after{content:"›";margin-left:5px;color:var(--navy2)}
+
+/* 個別ページ */
+.dt-back{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer;margin-bottom:12px}
+.dt-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.dt-head h2{margin:0;font-size:24px}
+.dt-head .lbl{margin-bottom:2px}
+.dt-money{text-align:right}
+.dt-money .v{font-size:30px;font-variant-numeric:tabular-nums;line-height:1.2}
+.dt-money .v small{font-size:15px;color:var(--muted);margin-left:4px}
+.dt-money .r{font-size:14px}
+.dt-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start}
+.dt-grid .card{margin-bottom:0}
+.radar svg{width:100%;height:auto;display:block;max-width:560px;margin:0 auto}
+.radar text{font-family:inherit;font-weight:700}
+.gap-sum{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.gap-sum div{flex:1;min-width:9em;background:var(--soft);border-radius:8px;padding:8px 10px}
+.gap-sum strong{display:block;font-size:18px}
+.gap-row{display:grid;grid-template-columns:6.2em 1fr 6.6em 3.6em;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.gap-row:last-child{border-bottom:0}
+.gap-track{position:relative;height:16px;background:var(--soft);border-radius:4px}
+.gap-track::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--accent)}
+.gap-track i{position:absolute;top:2px;bottom:2px;border-radius:3px}
+.gap-track i.ok{background:var(--ok)}.gap-track i.ng{background:var(--ng)}
+.gap-row .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+.gap-row .pc{text-align:right;font-variant-numeric:tabular-nums}
+.gap-scale{display:grid;grid-template-columns:6.2em 1fr 6.6em 3.6em;gap:8px;font-size:11px;color:var(--muted)}
+.gap-scale span:nth-child(2){display:flex;justify-content:space-between}
+.fb-card p{margin:0;font-weight:500;line-height:1.9;font-size:15px}
+.mem{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);background:none;padding:10px 2px;cursor:pointer;text-align:left}
+.mem:last-child{border-bottom:0}
+.mem:hover{background:var(--soft)}
+.mem .n{font-variant-numeric:tabular-nums;text-align:right}
+
 footer{max-width:1100px;margin:0 auto;padding:8px 16px 28px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
 
 @media (max-width:900px){
@@ -176,6 +213,10 @@ footer{max-width:1100px;margin:0 auto;padding:8px 16px 28px;font-size:13px;color
   .rp-profit .v{font-size:22px}
   .rp-profit .r{display:inline;margin-left:8px}
   .rp-fb{background:#fff;border:1px solid var(--line);border-left:4px solid var(--navy2)}
+  .dt-grid{grid-template-columns:1fr}
+  .dt-money{text-align:left}
+  .gap-row,.gap-scale{grid-template-columns:5.4em 1fr 5.8em 3.2em;gap:6px}
+  .gap-row{font-size:13px}
   .yoy tbody tr:first-child td{font-size:15px}
 }
 @media (max-width:400px){
@@ -222,7 +263,7 @@ footer{max-width:1100px;margin:0 auto;padding:8px 16px 28px;font-size:13px;color
 // GASウェブアプリのURL（デプロイ後に貼り替え）
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzd-c4_kdvbAv4mH4rFDvypG0It779UlB1CRr-PUScITIm2ud-TGDUszWswsV3JSRZiAg/exec';
 
-const state = { data: null, month: '', tab: 'overall', store: '', sort: 'store', open: {}, rpStore: '' };
+const state = { data: null, month: '', tab: 'overall', store: '', sort: 'store', open: {}, rpStore: '', detail: null };
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -446,7 +487,7 @@ function renderStores() {
   <div class="grid">${list.map(s => {
     const m = metrics(s), t = targetMetrics(s.target);
     return `<article class="unit">
-      <div class="unit-head"><h3>${esc(s.store)}<span class="chip">${s.members}名</span></h3>
+      <div class="unit-head"><h3>${link('store', s.store)}<span class="chip">${s.members}名</span></h3>
         ${t ? `<span class="score">達成率 <b>${pct(m.profit / t.profit)}</b></span>` : ''}</div>
       <div class="money"><span class="v">${man(m.profit)}万円</span>${t ? `<span class="t">目標 ${man(t.profit)}万円</span>` : '<span class="t">目標未設定</span>'}</div>
       ${t ? progress(m.profit, t.profit) : '<div style="height:12px"></div>'}
@@ -465,7 +506,7 @@ function renderStores() {
 
 /* ---------- 個人 ---------- */
 function renderPeople() {
-  const all = state.data.people[state.month] || [];
+  const all = visiblePeople(state.month);
   if (!all.length) return emptyMonth();
   const stores = [...new Set(all.map(p => p.store))];
   let list = all.filter(p => !state.store || p.store === state.store).map(p => {
@@ -488,7 +529,7 @@ function renderPeople() {
     const menus = Object.keys(p.menu).sort((a, b) => p.menu[b] - p.menu[a]);
     const open = state.open[p.name];
     return `<article class="unit">
-      <div class="unit-head"><h3>${esc(p.name)}<span class="chip">${esc(p.store)}</span></h3>
+      <div class="unit-head"><h3>${link('person', p.name)}<span class="chip">${esc(p.store)}</span></h3>
         ${sc == null ? '<span class="score">目標未設定</span>' : `<span class="score">スコア <b>${sc}</b>／15</span>`}</div>
       <div class="money"><span class="v">${man(m.profit)}万円</span>${t ? `<span class="t">目標 ${man(t.profit)}万円（${pct(m.profit / t.profit)}）</span>` : ''}</div>
       ${t ? progress(m.profit, t.profit) : '<div style="height:12px"></div>'}
@@ -503,12 +544,12 @@ function renderPeople() {
       </div>
       ${menus.length ? `<div class="chips">${menus.map(n => `<span>${esc(n)} ${p.menu[n]}</span>`).join('')}</div>` : ''}
       <button type="button" class="link" data-person="${esc(p.name)}" aria-expanded="${!!open}">${open ? '推移を閉じる' : '直近6か月の推移を見る'}</button>
-      ${open ? history(p.name) : ''}
+      ${open ? historyTable(p.name) : ''}
     </article>`;
   }).join('')}</div>`;
 }
 
-function history(name) {
+function historyTable(name) {
   const d = state.data, idx = d.months.indexOf(state.month);
   const rows = d.months.slice(Math.max(0, idx - 5), idx + 1).reverse().map(ym => {
     const p = (d.people[ym] || []).find(x => x.name === name);
@@ -523,6 +564,12 @@ function history(name) {
 const RP_COLS = [['商談件数', 'deals'], ['提案件数', 'props'], ['提案項目数', 'items'], ['成約数', 'success'], ['買取提案数', 'buy']];
 
 // 目標が設定され、その月に活動がある担当者だけを成績表の対象にする
+const hasInput = p => p.deals1 + p.deals2 + p.props1 + p.items1 + p.items2 + p.success + p.buy > 0 || p.profit !== 0;
+// 個人タイルに出す担当者：目標があり、入力数値もある人。目標が1件も無い月は入力がある人をすべて出す
+function visiblePeople(ym) {
+  const list = (state.data.people[ym] || []).filter(hasInput);
+  return list.some(p => p.target) ? list.filter(p => p.target) : list;
+}
 function reportPeople(ym) {
   return (state.data.people[ym] || []).filter(p => p.target &&
     (p.deals1 + p.deals2 + p.props1 + p.items1 + p.items2 + p.success + p.buy > 0 || p.profit !== 0));
@@ -539,9 +586,9 @@ function aggregate(list) {
 function reportHead(first) {
   return `<div class="rp-head"><span>${first}</span><span>粗利（実績／目標）</span>${RP_COLS.map(([l]) => `<span>${l}</span>`).join('')}</div>`;
 }
-function reportRow(title, chip, m, t, comment, extra) {
+function reportRow(title, chip, m, t, comment, extra, type) {
   return `<article class="rp-row ${extra || ''}">
-    <div class="rp-name"><b>${esc(title)}</b>${chip ? `<span class="chip">${esc(chip)}</span>` : ''}</div>
+    <div class="rp-name"><b>${type ? link(type, title) : esc(title)}</b>${chip ? `<span class="chip">${esc(chip)}</span>` : ''}</div>
     <div class="rp-cell rp-profit ${status(m.profit, t.profit)}"><span class="k">粗利</span><span class="v">${man(m.profit)}<small>／${man(t.profit)}万円</small></span><span class="r">達成率 ${t.profit ? pct(m.profit / t.profit) : '—'}</span></div>
     ${RP_COLS.map(([l, k]) => `<div class="rp-cell ${status(m[k], t[k])}"><span class="k">${l}</span><span class="v">${num(m[k])}<small>／${num(t[k])}</small></span></div>`).join('')}
     <div class="rp-fb">${comment ? esc(comment) : '<span class="note">フィードバックはまだありません</span>'}</div>
@@ -559,7 +606,7 @@ function renderReport() {
   const storeRows = stores.map(st => {
     const members = list.filter(p => p.store === st);
     const { m, t } = aggregate(members);
-    return reportRow(st, members.length + '名', m, t, fb.stores[st]);
+    return reportRow(st, members.length + '名', m, t, fb.stores[st], '', 'store');
   }).join('');
   const all = aggregate(list);
   const ppl = list.filter(p => !state.rpStore || p.store === state.rpStore);
@@ -576,8 +623,126 @@ function renderReport() {
       <select id="rpStoreSel" aria-label="店舗で絞り込む"><option value="">すべての店舗</option>${stores.map(s => `<option ${s === state.rpStore ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>
     </div>
     ${reportHead('担当者')}
-    ${ppl.map(p => reportRow(p.name, p.store, metrics(p), p.target, fb.people[p.name])).join('')}
+    ${ppl.map(p => reportRow(p.name, p.store, metrics(p), p.target, fb.people[p.name], '', 'person')).join('')}
   </section>`;
+}
+
+/* ---------- 個別成績ページ ---------- */
+const link = (type, key) => `<button type="button" class="nm" data-open="${type}" data-key="${esc(key)}">${esc(key)}</button>`;
+const AXES = [
+  ['粗利', 'profit', v => man(v) + '万'], ['商談件数', 'deals', num], ['提案件数', 'props', num],
+  ['提案率', 'propRate', pct], ['提案項目数', 'items', num], ['成約数', 'success', num],
+  ['成約率', 'successRate', pct], ['買取提案数', 'buy', num]
+];
+
+function openDetail(type, key) {
+  state.detail = { type, key };
+  window.history.pushState({ d: state.detail }, '');
+  render();
+  window.scrollTo({ top: 0 });
+}
+function closeDetail() {
+  if (window.history.state && window.history.state.d) window.history.back();
+  else { state.detail = null; render(); }
+}
+
+function detailData() {
+  const { type, key } = state.detail, ym = state.month;
+  const fb = (state.data.feedback || {})[ym] || { overall: '', stores: {}, people: {} };
+  if (type === 'person') {
+    const p = (state.data.people[ym] || []).find(x => x.name === key);
+    if (!p) return null;
+    return { title: p.name, chip: p.store, store: p.store, m: metrics(p), t: targetMetrics(p.target), comment: fb.people[key] };
+  }
+  const all = visiblePeople(ym).filter(p => p.store === key);
+  if (!all.length) return null;
+  const scored = reportPeople(ym).filter(p => p.store === key);
+  const base = scored.length ? scored : all;
+  let m, t = null;
+  if (scored.length) { const a = aggregate(scored); m = a.m; t = targetMetrics(a.t); }
+  else m = metrics(base.reduce((s, p) => { ['deals1','props1','items1','deals2','items2','success','profit','buy'].forEach(k => s[k] += p[k] || 0); return s; },
+    { deals1: 0, props1: 0, items1: 0, deals2: 0, items2: 0, success: 0, profit: 0, buy: 0 }));
+  return { title: key, chip: base.length + '名', m, t, comment: fb.stores[key], members: all };
+}
+
+function radar(m, t) {
+  const axes = AXES.filter(([, k]) => t && t[k] > 0 && m[k] != null);
+  if (axes.length < 3) return '<p class="note">目標が設定されている項目が少ないため、レーダーチャートを表示できません。</p>';
+  const sm = window.innerWidth <= 640;  // スマホは縮小表示されるので文字を大きめに
+  const S = 2, W = 560, H = sm ? 500 : 470, cx = W / 2, cy = sm ? 252 : 238, R = sm ? 140 : 165, n = axes.length;
+  const fs1 = sm ? 24 : 14, fs2 = sm ? 22 : 13, lh = sm ? 26 : 17;
+  const ang = i => -Math.PI / 2 + i * 2 * Math.PI / n;
+  const pt = (i, f) => [cx + Math.cos(ang(i)) * R * f, cy + Math.sin(ang(i)) * R * f];
+  const poly = f => axes.map((_, i) => pt(i, f).map(v => v.toFixed(1)).join(',')).join(' ');
+  const rings = [0.5, 1, 1.5, 2].map(r => `<polygon points="${poly(r / S)}" fill="none" stroke="${r === 1 ? 'var(--accent)' : 'var(--line)'}" stroke-width="${r === 1 ? 2.5 : 1}" ${r === 1 ? 'stroke-dasharray="7 5"' : ''}/>`).join('');
+  const spokes = axes.map((_, i) => { const [x, y] = pt(i, 1); return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--line)"/>`; }).join('');
+  const ratios = axes.map(([, k]) => m[k] / t[k]);
+  const actual = axes.map((_, i) => pt(i, Math.min(ratios[i], S) / S).map(v => v.toFixed(1)).join(',')).join(' ');
+  const dots = ratios.map((r, i) => { const [x, y] = pt(i, Math.min(r, S) / S); return `<circle cx="${x}" cy="${y}" r="${sm ? 7 : 5}" fill="${r >= 1 ? 'var(--ok)' : 'var(--ng)'}" stroke="#fff" stroke-width="2"/>`; }).join('');
+  const labels = axes.map(([l], i) => {
+    const [x, y] = pt(i, sm ? 1.17 : 1.15), c = Math.cos(ang(i)), sn = Math.sin(ang(i));
+    const anchor = c > 0.3 ? 'start' : c < -0.3 ? 'end' : 'middle';
+    const y0 = sn < -0.9 ? y - lh + 2 : sn > 0.9 ? y + fs1 * 0.6 : y - 4;
+    const r = ratios[i];
+    return `<text x="${x}" y="${y0}" text-anchor="${anchor}" font-size="${fs1}" fill="var(--text)">${l}</text>
+      <text x="${x}" y="${y0 + lh}" text-anchor="${anchor}" font-size="${fs2}" fill="${r >= 1 ? 'var(--ok)' : 'var(--ng)'}">${pct(r)}${r > S ? (sm ? '↑' : '（枠外）') : ''}</text>`;
+  }).join('');
+  const ringLbl = [1, 2].map(r => `<text x="${cx + 5}" y="${cy - R * r / S - 4}" font-size="${sm ? 18 : 11}" fill="${r === 1 ? 'var(--accent)' : 'var(--muted)'}">${r * 100}%</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="目標に対する達成率のレーダーチャート。${axes.map(([l], i) => l + ' ' + pct(ratios[i])).join('、')}">
+    ${rings}${spokes}
+    <polygon points="${actual}" fill="rgba(45,91,140,.18)" stroke="var(--navy2)" stroke-width="2.5" stroke-linejoin="round"/>
+    ${dots}${ringLbl}${labels}
+  </svg>
+  <div class="legend" style="justify-content:center;margin:6px 0 0"><span><i style="background:var(--accent)"></i>目標（100%）</span><span><i style="background:var(--navy2)"></i>実績</span><span>外枠は200%</span></div>`;
+}
+
+function gapList(m, t) {
+  if (!t) return '<p class="note">この月は目標が設定されていません。</p>';
+  const rows = AXES.map(([l, k, f]) => {
+    if (!(t[k] > 0)) return `<div class="gap-row"><span>${l}</span><span class="note">目標なし</span><span class="val">${f(m[k])}</span><span class="pc">—</span></div>`;
+    const d = m[k] / t[k] - 1, w = Math.min(Math.abs(d), 1) * 50, cls = d >= 0 ? 'ok' : 'ng';
+    return { d, l, html: `<div class="gap-row"><span>${l}</span>
+      <span class="gap-track" role="img" aria-label="${l} 目標比 ${d >= 0 ? '+' : ''}${Math.round(d * 100)}%"><i class="${cls}" style="left:${d >= 0 ? 50 : 50 - w}%;width:${w}%"></i></span>
+      <span class="val">${f(m[k])}／${f(t[k])}</span><span class="pc ${d >= 0 ? 'up' : 'down'}">${d >= 0 ? '+' : ''}${Math.round(d * 100)}%</span></div>` };
+  });
+  const scored = rows.filter(r => typeof r === 'object');
+  const okN = scored.filter(r => r.d >= 0).length;
+  const worst = scored.slice().sort((a, b) => a.d - b.d)[0];
+  return `<div class="gap-sum">
+      <div><span class="lbl">目標を達成した項目</span><strong>${okN}／${scored.length}</strong></div>
+      <div><span class="lbl">最も乖離が大きい項目</span><strong class="${worst && worst.d < 0 ? 'down' : ''}">${worst && worst.d < 0 ? worst.l + '（' + Math.round(worst.d * 100) + '%）' : 'なし'}</strong></div>
+    </div>
+    <div class="gap-scale"><span></span><span><span>−100%</span><span>目標</span><span>+100%</span></span><span></span><span></span></div>
+    ${rows.map(r => typeof r === 'object' ? r.html : r).join('')}`;
+}
+
+function renderDetail() {
+  const d = detailData(), back = '<button type="button" class="dt-back" data-back>‹ 一覧に戻る</button>';
+  if (!d) return `${back}<div class="msg"><b>${ymLabel(state.month)}の${esc(state.detail.key)}のデータはありません</b>月を切り替えてください。</div>`;
+  const { m, t } = d;
+  const sc = state.detail.type === 'person' ? score(m, t) : null;
+  return `${back}
+  <section class="card">
+    <div class="dt-head">
+      <div><div class="lbl">${ymLabel(state.month)}の${state.detail.type === 'person' ? '個人' : '店舗'}成績</div>
+        <h2>${esc(d.title)}<span class="chip">${esc(d.chip)}</span></h2>
+        ${sc != null ? `<span class="score">スコア <b>${sc}</b>／15</span>` : ''}</div>
+      <div class="dt-money"><div class="lbl">アシスト粗利</div>
+        <div class="v">${man(m.profit)}<small>${t ? '／' + man(t.profit) + '万円' : '万円'}</small></div>
+        ${t ? `<div class="r ${m.profit >= t.profit ? 'up' : 'down'}">達成率 ${pct(m.profit / t.profit)}</div>` : ''}</div>
+    </div>
+  </section>
+  <div class="dt-grid">
+    <section class="card radar"><h2>目標に対する達成率</h2>${radar(m, t)}</section>
+    <section class="card"><h2>KPIとの乖離</h2>${gapList(m, t)}</section>
+  </div>
+  <section class="card fb-card" style="margin-top:16px"><h2>フィードバック</h2>
+    ${d.comment ? `<p>${esc(d.comment)}</p>` : '<p class="note">この月のフィードバックはまだありません。</p>'}</section>
+  ${d.members ? `<section class="card"><h2>メンバー</h2>${d.members.map(p => {
+      const pm = metrics(p);
+      return `<button type="button" class="mem" data-open="person" data-key="${esc(p.name)}"><span>${esc(p.name)}</span>
+        <span class="n">${man(pm.profit)}万円</span><span class="n ${p.target ? (pm.profit >= p.target.profit ? 'up' : 'down') : ''}">${p.target && p.target.profit ? pct(pm.profit / p.target.profit) : '—'}</span></button>`;
+    }).join('')}</section>` : ''}`;
 }
 
 function emptyMonth() {
@@ -593,7 +758,7 @@ function render() {
   $('#next').disabled = i >= d.months.length - 1;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === state.tab)));
   const views = { overall: renderOverall, stores: renderStores, people: renderPeople, report: renderReport };
-  $('#view').innerHTML = views[state.tab]();
+  $('#view').innerHTML = state.detail ? renderDetail() : views[state.tab]();
 }
 
 function setMonth(ym) {
@@ -603,13 +768,19 @@ function setMonth(ym) {
 }
 
 function bind() {
+  let wasSm = window.innerWidth <= 640;
+  window.addEventListener('resize', () => { const sm = window.innerWidth <= 640; if (sm !== wasSm) { wasSm = sm; if (state.detail) render(); } });
+  window.addEventListener('popstate', e => { state.detail = (e.state && e.state.d) || null; render(); });
   $('#monthSel').addEventListener('change', e => setMonth(e.target.value));
   $('#prev').addEventListener('click', () => setMonth(shift(state.month, -1)));
   $('#next').addEventListener('click', () => setMonth(shift(state.month, 1)));
   document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
-    state.tab = b.dataset.tab; render(); window.scrollTo({top: 0});
+    state.tab = b.dataset.tab; state.detail = null; render(); window.scrollTo({top: 0});
   }));
   $('#view').addEventListener('click', e => {
+    const op = e.target.closest('[data-open]');
+    if (op) return openDetail(op.dataset.open, op.dataset.key);
+    if (e.target.closest('[data-back]')) return closeDetail();
     const bar = e.target.closest('.b, .tl-row');
     if (bar) return setMonth(bar.dataset.ym);
     const st = e.target.closest('[data-store]');
