@@ -7,7 +7,7 @@
 <style>
 :root{
   --navy:#1e3a5f;--navy2:#2d5b8c;--bar:#b9c9dc;--bg:#edf1f6;--card:#fff;--line:#d8e0ea;
-  --soft:#f4f7fa;--text:#1f2933;--muted:#5f6f82;--ok:#16834f;--ng:#cf3a3a;--accent:#e8720c;
+  --soft:#f4f7fa;--prev:#5f86b3;--text:#1f2933;--muted:#5f6f82;--ok:#16834f;--ng:#cf3a3a;--accent:#e8720c;
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -64,7 +64,23 @@ main{max-width:1100px;margin:0 auto;padding:16px 16px 8px}
 /* 推移グラフ */
 .chart svg{width:100%;height:auto;display:block}
 .chart .b{cursor:pointer}
-.chart text{font-family:inherit;font-weight:700}
+.chart text{font-family:inherit;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+
+/* 前年比較 */
+.yoy{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.yoy th,.yoy td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.yoy th:first-child,.yoy td:first-child{text-align:left;white-space:normal}
+.yoy thead th{font-size:13px;color:var(--muted)}
+.yoy tbody tr:first-child td{font-size:18px}
+/* 推移（スマホ用の横棒） */
+.trend-list{display:none}
+.tl-row{display:grid;grid-template-columns:5.6em 1fr 4.6em;gap:8px;align-items:center;width:100%;border:0;background:none;padding:4px 0;text-align:left;cursor:pointer;font-size:14px}
+.tl-row .track{position:relative;height:14px;background:var(--soft);border-radius:4px}
+.tl-row .track i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--bar)}
+.tl-row .track b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--accent)}
+.tl-row .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.tl-row.sel .track i{background:var(--navy2)}.tl-row.sel .n{color:var(--text)}
+.tl-row.py .track i{background:var(--prev)}.tl-row.py .n{color:var(--text)}
 
 /* メニュー */
 .menu-row{display:grid;grid-template-columns:8.5em 1fr 5.5em 4em;gap:10px;align-items:center;padding:5px 0;font-size:15px}
@@ -123,6 +139,11 @@ footer{max-width:1100px;margin:0 auto;padding:8px 16px 28px;font-size:13px;color
   .kpis{grid-template-columns:repeat(2,1fr);gap:10px}
   .grid{grid-template-columns:1fr}
   .menu-row{grid-template-columns:7em 1fr 4.8em 3.4em;gap:6px;font-size:14px}
+  .chart svg,.chart-unit{display:none}
+  .trend-list{display:block}
+  .yoy th,.yoy td{padding:7px 3px;font-size:13px}
+  .yoy td:first-child{font-size:12px}
+  .yoy tbody tr:first-child td{font-size:15px}
 }
 @media (max-width:400px){
   .cells{grid-template-columns:repeat(2,1fr)}
@@ -202,6 +223,7 @@ function score(m, t) {
 const man = (v) => v == null ? '—' : (Math.round(v / 1000) / 10).toLocaleString('ja-JP', {maximumFractionDigits: 1});
 const pct = (v) => v == null ? '—' : Math.round(v * 100) + '%';
 const num = (v, d = 0) => v == null ? '—' : Number(v).toLocaleString('ja-JP', {minimumFractionDigits: d, maximumFractionDigits: d});
+const ymShort = (ym) => ym.slice(2, 4) + '年' + Number(ym.slice(5)) + '月';
 const ymLabel = (ym) => ym.slice(0, 4) + '年' + Number(ym.slice(5)) + '月';
 const status = (v, t) => (v == null || t == null || !t) ? '' : (v >= t ? 'ok' : 'ng');
 function shift(ym, d) {
@@ -257,10 +279,13 @@ function renderOverall() {
     ${kpi('平均粗利', m.avgProfit, g.avgProfit, v => man(v) + '万円', `目標 ${man(g.avgProfit)}万円`)}
   </div>
 
+  ${yoyCard()}
+
   <section class="card chart">
-    <h2>アシスト粗利の推移</h2>
-    <div class="legend"><span><i style="background:var(--navy2)"></i>選択中の月</span><span><i style="background:var(--accent)"></i>目標 ${man(g.overallProfit)}万円</span><span>棒をタップするとその月に切り替わります</span></div>
+    <h2>アシスト粗利の推移（前年同月から）</h2>
+    <div class="legend"><span><i style="background:var(--navy2)"></i>選択中の月</span><span><i style="background:var(--prev)"></i>前年同月</span><span><i style="background:var(--accent)"></i>目標 ${man(g.overallProfit)}万円</span><span>タップするとその月に切り替わります</span></div>
     ${trendChart()}
+    ${trendList()}
   </section>
 
   <section class="card">
@@ -270,28 +295,98 @@ function renderOverall() {
   </section>`;
 }
 
-function trendChart() {
+function trendRange() {
   const d = state.data, idx = d.months.indexOf(state.month);
-  const list = d.months.slice(Math.max(0, idx - 11), idx + 1);
+  return d.months.slice(Math.max(0, idx - 12), idx + 1);
+}
+const manInt = (v) => Math.round(v / 10000).toLocaleString('ja-JP');
+
+function trendChart() {
+  const d = state.data, list = trendRange(), py = shift(state.month, -12);
   const goal = d.goals.overallProfit;
   const vals = list.map(ym => d.overall[ym].profit);
-  const max = Math.max(goal, ...vals) * 1.12;
-  const W = 720, H = 230, top = 22, bottom = 30, left = 8;
+  const max = Math.max(goal, ...vals) * 1.15;
+  const W = 760, H = 280, top = 24, bottom = 48, left = 6;
   const bw = (W - left * 2) / list.length;
   const y = (v) => top + (H - top - bottom) * (1 - v / max);
   const bars = list.map((ym, i) => {
-    const v = vals[i], x = left + i * bw + bw * 0.18, w = bw * 0.64, sel = ym === state.month;
+    const v = vals[i], x = left + i * bw + bw * 0.16, w = bw * 0.68;
+    const sel = ym === state.month, isPy = ym === py;
+    const fill = sel ? 'var(--navy2)' : isPy ? 'var(--prev)' : 'var(--bar)';
+    const mo = Number(ym.slice(5));
+    const showYear = i === 0 || mo === 1;
     return `<g class="b" data-ym="${ym}" tabindex="0" role="button" aria-label="${ymLabel(ym)} ${man(v)}万円">
-      <rect x="${x}" y="${y(v)}" width="${w}" height="${H - bottom - y(v)}" rx="3" fill="${sel ? 'var(--navy2)' : 'var(--bar)'}"/>
-      ${sel ? `<text x="${x + w / 2}" y="${y(v) - 6}" text-anchor="middle" font-size="13" fill="var(--text)">${man(v)}</text>` : ''}
-      <text x="${x + w / 2}" y="${H - 9}" text-anchor="middle" font-size="12" fill="${sel ? 'var(--text)' : 'var(--muted)'}">${Number(ym.slice(5))}月</text>
+      <rect x="${x}" y="${y(v)}" width="${w}" height="${H - bottom - y(v)}" rx="3" fill="${fill}"/>
+      <text x="${x + w / 2}" y="${y(v) - 6}" text-anchor="middle" font-size="13" fill="${sel || isPy ? 'var(--text)' : 'var(--muted)'}">${manInt(v)}</text>
+      <text x="${x + w / 2}" y="${H - 28}" text-anchor="middle" font-size="13" fill="${sel || isPy ? 'var(--text)' : 'var(--muted)'}">${mo}月</text>
+      ${showYear ? `<text x="${x + w / 2}" y="${H - 10}" text-anchor="middle" font-size="12" fill="var(--muted)">${ym.slice(0, 4)}年</text>` : ''}
     </g>`;
   }).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" role="group" aria-label="直近12か月のアシスト粗利">
+  return `<svg viewBox="0 0 ${W} ${H}" role="group" aria-label="前年同月からのアシスト粗利（単位：万円）">
     <line x1="0" x2="${W}" y1="${H - bottom}" y2="${H - bottom}" stroke="var(--line)"/>
-    ${bars}
     <line x1="0" x2="${W}" y1="${y(goal)}" y2="${y(goal)}" stroke="var(--accent)" stroke-width="2" stroke-dasharray="6 4"/>
-  </svg>`;
+    ${bars}
+  </svg>
+  <p class="note chart-unit" style="margin:6px 0 0">単位：万円</p>`;
+}
+
+// スマホ用：月ごとの横棒
+function trendList() {
+  const d = state.data, list = trendRange(), py = shift(state.month, -12);
+  const goal = d.goals.overallProfit;
+  const max = Math.max(goal, ...list.map(ym => d.overall[ym].profit)) * 1.05;
+  return `<div class="trend-list">${list.map(ym => {
+    const v = d.overall[ym].profit;
+    const cls = ym === state.month ? 'sel' : ym === py ? 'py' : '';
+    return `<button type="button" class="tl-row ${cls}" data-ym="${ym}">
+      <span>${ym.slice(2, 4)}年${Number(ym.slice(5))}月</span>
+      <span class="track"><i style="width:${v / max * 100}%"></i><b style="left:${goal / max * 100}%"></b></span>
+      <span class="n">${manInt(v)}万</span></button>`;
+  }).join('')}</div>`;
+}
+
+// 前年同月との比較表
+function yoyCard() {
+  const d = state.data, ym = state.month, py = shift(ym, -12);
+  const curO = d.overall[ym], prevO = d.overall[py];
+  const cur = metrics(curO), prev = prevO ? metrics(prevO) : null;
+  const prevProfit = prevO ? prevO.profit : curO.profitPrevYear;
+  const rows = [
+    ['アシスト粗利', cur.profit, prevProfit, 'money'],
+    ['商談数', cur.deals, prev && prev.deals, 'int'],
+    ['提案件数', cur.props, prev && prev.props, 'int'],
+    ['提案率', cur.propRate, prev && prev.propRate, 'rate'],
+    ['平均提案項目数', cur.itemsPer, prev && prev.itemsPer, 'dec'],
+    ['成約項目数', cur.success, prev && prev.success, 'int'],
+    ['成約率', cur.successRate, prev && prev.successRate, 'rate'],
+    ['平均粗利', cur.avgProfit, prev && prev.avgProfit, 'money']
+  ];
+  const f = {
+    money: v => man(v) + '万円', int: v => num(v), rate: v => pct(v), dec: v => num(v, 2)
+  };
+  const sign = (v) => v > 0 ? '+' : '';
+  const diffFmt = {
+    money: v => sign(v) + man(v) + '万円',
+    int: v => sign(v) + num(v),
+    rate: v => sign(v) + (Math.round(v * 1000) / 10).toFixed(1) + 'pt',
+    dec: v => sign(v) + num(v, 2)
+  };
+  const body = rows.map(([label, a, b, type]) => {
+    const has = a != null && b != null;
+    const dv = has ? a - b : null;
+    const ratio = has && type !== 'rate' && b ? pct(a / b) : '—';
+    const cls = dv > 0 ? 'up' : dv < 0 ? 'down' : '';
+    return `<tr><td>${label}</td><td>${a == null ? '—' : f[type](a)}</td><td>${b == null ? '—' : f[type](b)}</td>
+      <td class="${cls}">${has ? diffFmt[type](dv) : '—'}</td><td class="${cls}">${ratio}</td></tr>`;
+  }).join('');
+  return `<section class="card">
+    <h2>前年同月との比較</h2>
+    <table class="yoy">
+      <thead><tr><th></th><th>${ymShort(ym)}</th><th>${ymShort(py)}</th><th>差</th><th>前年比</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>
+    <p class="note" style="margin:8px 0 0">前年比は当月÷前年同月です。率の項目は差をポイント（pt）で表示しています。${prevO ? '' : '前年同月の月別集計が無いため、粗利以外は比較できません。'}</p>
+  </section>`;
 }
 
 function menuRows(menu, prevMenu) {
@@ -419,7 +514,7 @@ function bind() {
     state.tab = b.dataset.tab; render(); window.scrollTo({top: 0});
   }));
   $('#view').addEventListener('click', e => {
-    const bar = e.target.closest('.b');
+    const bar = e.target.closest('.b, .tl-row');
     if (bar) return setMonth(bar.dataset.ym);
     const st = e.target.closest('[data-store]');
     if (st) { state.store = st.dataset.store; state.tab = 'people'; render(); window.scrollTo({top: 0}); return; }
