@@ -148,6 +148,17 @@ main{max-width:1100px;margin:0 auto;padding:16px 16px 8px}
 .nm:hover{color:var(--navy2);text-decoration-color:var(--navy2)}
 .nm::after{content:"›";margin-left:5px;color:var(--navy2)}
 
+/* 押せるタイル */
+.tap{cursor:pointer;transition:background-color .15s,border-color .15s,box-shadow .15s}
+.tap:hover{background:#dde8f5;border-color:var(--navy2);box-shadow:0 0 0 1px var(--navy2)}
+.tap:active{background:#cddcef}
+.tap:hover .cell,.tap:hover .rp-cell{background:#fff}
+.tap:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.rp-row.tap:hover{box-shadow:inset 4px 0 0 var(--navy2);border-color:var(--line)}
+.rp-row.tap:hover .rp-fb{background:#fff}
+.tap .unit-head h3::after,.tap .rp-name b::after{content:"›";margin-left:6px;color:var(--navy2);font-size:1.1em}
+.tap-hint{margin:0 0 12px}
+
 /* 個別ページ */
 .dt-back{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 14px;cursor:pointer;margin-bottom:12px}
 .dt-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
@@ -483,11 +494,11 @@ function menuRows(menu, prevMenu) {
 function renderStores() {
   const list = state.data.stores[state.month] || [];
   if (!list.length) return emptyMonth();
-  return `<p class="note" style="margin:0 0 12px">目標は所属メンバーの個人目標の合計です。数値が赤いものは目標未達です。</p>
+  return `<p class="note" style="margin:0 0 12px">目標は所属メンバーの個人目標の合計です。数値が赤いものは目標未達です。タイルを押すと店舗の個別成績が開きます。</p>
   <div class="grid">${list.map(s => {
     const m = metrics(s), t = targetMetrics(s.target);
-    return `<article class="unit">
-      <div class="unit-head"><h3>${link('store', s.store)}<span class="chip">${s.members}名</span></h3>
+    return `<article class="unit tap" ${tap('store', s.store)}>
+      <div class="unit-head"><h3>${esc(s.store)}<span class="chip">${s.members}名</span></h3>
         ${t ? `<span class="score">達成率 <b>${pct(m.profit / t.profit)}</b></span>` : ''}</div>
       <div class="money"><span class="v">${man(m.profit)}万円</span>${t ? `<span class="t">目標 ${man(t.profit)}万円</span>` : '<span class="t">目標未設定</span>'}</div>
       ${t ? progress(m.profit, t.profit) : '<div style="height:12px"></div>'}
@@ -523,13 +534,13 @@ function renderPeople() {
       ${[['store','店舗順'],['profit','粗利の多い順'],['rate','粗利達成率の高い順'],['score','スコアの高い順']].map(([v, l]) => `<option value="${v}" ${v === state.sort ? 'selected' : ''}>${l}</option>`).join('')}
     </select></label>
   </div>
-  <p class="note" style="margin:-4px 0 12px">スコアは目標を上回った項目に加点した15点満点の目安です（粗利4・商談3・提案件数2・提案率1・提案項目数1・成約項目数2・成約率2）。</p>
+  <p class="note" style="margin:-4px 0 12px">スコアは目標を上回った項目に加点した15点満点の目安です（粗利4・商談3・提案件数2・提案率1・提案項目数1・成約項目数2・成約率2）。タイルを押すと個別成績が開きます。</p>
   ${list.length ? '' : '<p class="msg">該当する担当者がいません。</p>'}
   <div class="grid">${list.map(({p, m, t, sc}) => {
     const menus = Object.keys(p.menu).sort((a, b) => p.menu[b] - p.menu[a]);
     const open = state.open[p.name];
-    return `<article class="unit">
-      <div class="unit-head"><h3>${link('person', p.name)}<span class="chip">${esc(p.store)}</span></h3>
+    return `<article class="unit tap" ${tap('person', p.name)}>
+      <div class="unit-head"><h3>${esc(p.name)}<span class="chip">${esc(p.store)}</span></h3>
         ${sc == null ? '<span class="score">目標未設定</span>' : `<span class="score">スコア <b>${sc}</b>／15</span>`}</div>
       <div class="money"><span class="v">${man(m.profit)}万円</span>${t ? `<span class="t">目標 ${man(t.profit)}万円（${pct(m.profit / t.profit)}）</span>` : ''}</div>
       ${t ? progress(m.profit, t.profit) : '<div style="height:12px"></div>'}
@@ -587,8 +598,8 @@ function reportHead(first) {
   return `<div class="rp-head"><span>${first}</span><span>粗利（実績／目標）</span>${RP_COLS.map(([l]) => `<span>${l}</span>`).join('')}</div>`;
 }
 function reportRow(title, chip, m, t, comment, extra, type) {
-  return `<article class="rp-row ${extra || ''}">
-    <div class="rp-name"><b>${type ? link(type, title) : esc(title)}</b>${chip ? `<span class="chip">${esc(chip)}</span>` : ''}</div>
+  return `<article class="rp-row ${extra || ''} ${type ? 'tap' : ''}" ${type ? tap(type, title) : ''}>
+    <div class="rp-name"><b>${esc(title)}</b>${chip ? `<span class="chip">${esc(chip)}</span>` : ''}</div>
     <div class="rp-cell rp-profit ${status(m.profit, t.profit)}"><span class="k">粗利</span><span class="v">${man(m.profit)}<small>／${man(t.profit)}万円</small></span><span class="r">達成率 ${t.profit ? pct(m.profit / t.profit) : '—'}</span></div>
     ${RP_COLS.map(([l, k]) => `<div class="rp-cell ${status(m[k], t[k])}"><span class="k">${l}</span><span class="v">${num(m[k])}<small>／${num(t[k])}</small></span></div>`).join('')}
     <div class="rp-fb">${comment ? esc(comment) : '<span class="note">フィードバックはまだありません</span>'}</div>
@@ -611,7 +622,7 @@ function renderReport() {
   const all = aggregate(list);
   const ppl = list.filter(p => !state.rpStore || p.store === state.rpStore);
 
-  return `<p class="note" style="margin:0 0 12px">${ymLabel(ym)}の成績です。各項目は「実績／目標」で、緑は目標達成、赤は未達です。成績表の対象は、目標が設定されていてこの月に活動があった担当者です。</p>
+  return `<p class="note" style="margin:0 0 12px">${ymLabel(ym)}の成績です。各項目は「実績／目標」で、緑は目標達成、赤は未達です。成績表の対象は、目標が設定されていてこの月に活動があった担当者です。行を押すと個別成績が開きます。</p>
   <section class="rp">
     <div class="rp-title"><h2>店舗別成績表</h2></div>
     ${reportHead('店舗')}
@@ -628,6 +639,7 @@ function renderReport() {
 }
 
 /* ---------- 個別成績ページ ---------- */
+const tap = (type, key) => `data-open="${type}" data-key="${esc(key)}" tabindex="0" role="button" aria-label="${esc(key)}の個別成績を開く"`;
 const link = (type, key) => `<button type="button" class="nm" data-open="${type}" data-key="${esc(key)}">${esc(key)}</button>`;
 const AXES = [
   ['粗利', 'profit', v => man(v) + '万'], ['商談件数', 'deals', num], ['提案件数', 'props', num],
@@ -778,19 +790,23 @@ function bind() {
     state.tab = b.dataset.tab; state.detail = null; render(); window.scrollTo({top: 0});
   }));
   $('#view').addEventListener('click', e => {
-    const op = e.target.closest('[data-open]');
-    if (op) return openDetail(op.dataset.open, op.dataset.key);
     if (e.target.closest('[data-back]')) return closeDetail();
     const bar = e.target.closest('.b, .tl-row');
     if (bar) return setMonth(bar.dataset.ym);
+    // タイル内のボタンはタイルより先に判定する
     const st = e.target.closest('[data-store]');
     if (st) { state.store = st.dataset.store; state.tab = 'people'; render(); window.scrollTo({top: 0}); return; }
     const pe = e.target.closest('[data-person]');
-    if (pe) { state.open[pe.dataset.person] = !state.open[pe.dataset.person]; render(); }
+    if (pe) { state.open[pe.dataset.person] = !state.open[pe.dataset.person]; render(); return; }
+    if (e.target.closest('.hist')) return;
+    const op = e.target.closest('[data-open]');
+    if (op) return openDetail(op.dataset.open, op.dataset.key);
   });
   $('#view').addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
     const bar = e.target.closest('.b');
-    if (bar && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setMonth(bar.dataset.ym); }
+    if (bar) { e.preventDefault(); return setMonth(bar.dataset.ym); }
+    if (e.target.matches('[data-open][tabindex]')) { e.preventDefault(); openDetail(e.target.dataset.open, e.target.dataset.key); }
   });
   $('#view').addEventListener('change', e => {
     if (e.target.id === 'storeSel') { state.store = e.target.value; render(); }
