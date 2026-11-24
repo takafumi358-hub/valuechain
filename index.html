@@ -121,6 +121,28 @@ main{max-width:1100px;margin:0 auto;padding:16px 16px 8px}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:12px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:0}
 
+/* 成績表 */
+.rp{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.rp-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.rp-title h2{margin:0;font-size:17px}
+.rp-title select{height:34px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 8px}
+.rp-head,.rp-row{display:grid;grid-template-columns:10em 1.5fr repeat(5,1fr);gap:6px 10px;padding:10px 16px;align-items:center}
+.rp-head{background:var(--soft);font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)}
+.rp-head span:not(:first-child){text-align:right}
+.rp-row{border-bottom:1px solid var(--line)}
+.rp-row:last-child{border-bottom:0}
+.rp-row.total{background:#f6f8fb}
+.rp-name b{font-size:16px}
+.rp-name .chip{margin-left:6px}
+.rp-cell{text-align:right;font-variant-numeric:tabular-nums}
+.rp-cell .k{display:none}
+.rp-cell .v{font-size:17px}
+.rp-cell small{font-size:12px;color:var(--muted);margin-left:2px}
+.rp-cell .r{display:block;font-size:12px;color:var(--muted)}
+.rp-cell.ng .v{color:var(--ng)}.rp-cell.ok .v{color:var(--ok)}
+.rp-fb{grid-column:1/-1;background:var(--soft);border-left:4px solid var(--navy2);border-radius:6px;padding:9px 12px;font-size:14px;line-height:1.85;font-weight:500;margin-top:2px}
+.rp-fb .note{font-weight:700}
+
 footer{max-width:1100px;margin:0 auto;padding:8px 16px 28px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
 
 @media (max-width:900px){
@@ -143,6 +165,17 @@ footer{max-width:1100px;margin:0 auto;padding:8px 16px 28px;font-size:13px;color
   .trend-list{display:block}
   .yoy th,.yoy td{padding:7px 3px;font-size:13px}
   .yoy td:first-child{font-size:12px}
+  .tabs button{font-size:14px}
+  .rp-head{display:none}
+  .rp-row{grid-template-columns:repeat(3,1fr);padding:12px}
+  .rp-name,.rp-profit{grid-column:1/-1}
+  .rp-cell{text-align:left;background:var(--soft);border-radius:8px;padding:5px 9px}
+  .rp-profit{background:none;padding:0}
+  .rp-cell .k{display:block;font-size:12px;color:var(--muted)}
+  .rp-profit .k{display:none}
+  .rp-profit .v{font-size:22px}
+  .rp-profit .r{display:inline;margin-left:8px}
+  .rp-fb{background:#fff;border:1px solid var(--line);border-left:4px solid var(--navy2)}
   .yoy tbody tr:first-child td{font-size:15px}
 }
 @media (max-width:400px){
@@ -173,6 +206,7 @@ footer{max-width:1100px;margin:0 auto;padding:8px 16px 28px;font-size:13px;color
       <button type="button" role="tab" data-tab="overall" aria-selected="true">全体</button>
       <button type="button" role="tab" data-tab="stores" aria-selected="false">店舗別</button>
       <button type="button" role="tab" data-tab="people" aria-selected="false">個人</button>
+      <button type="button" role="tab" data-tab="report" aria-selected="false">成績表</button>
     </div>
   </div>
 </div>
@@ -188,7 +222,7 @@ footer{max-width:1100px;margin:0 auto;padding:8px 16px 28px;font-size:13px;color
 // GASウェブアプリのURL（デプロイ後に貼り替え）
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzd-c4_kdvbAv4mH4rFDvypG0It779UlB1CRr-PUScITIm2ud-TGDUszWswsV3JSRZiAg/exec';
 
-const state = { data: null, month: '', tab: 'overall', store: '', sort: 'store', open: {} };
+const state = { data: null, month: '', tab: 'overall', store: '', sort: 'store', open: {}, rpStore: '' };
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -485,6 +519,67 @@ function history(name) {
   return `<table class="hist"><thead><tr><th>月</th><th>粗利</th><th>商談</th><th>提案率</th><th>成約率</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+/* ---------- 成績表 ---------- */
+const RP_COLS = [['商談件数', 'deals'], ['提案件数', 'props'], ['提案項目数', 'items'], ['成約数', 'success'], ['買取提案数', 'buy']];
+
+// 目標が設定され、その月に活動がある担当者だけを成績表の対象にする
+function reportPeople(ym) {
+  return (state.data.people[ym] || []).filter(p => p.target &&
+    (p.deals1 + p.deals2 + p.props1 + p.items1 + p.items2 + p.success + p.buy > 0 || p.profit !== 0));
+}
+function aggregate(list) {
+  const s = { deals1: 0, props1: 0, items1: 0, deals2: 0, items2: 0, success: 0, profit: 0, buy: 0 };
+  const t = { profit: 0, deals: 0, props: 0, items: 0, success: 0, buy: 0 };
+  list.forEach(p => {
+    Object.keys(s).forEach(k => s[k] += p[k] || 0);
+    Object.keys(t).forEach(k => t[k] += p.target[k] || 0);
+  });
+  return { m: metrics(s), t };
+}
+function reportHead(first) {
+  return `<div class="rp-head"><span>${first}</span><span>粗利（実績／目標）</span>${RP_COLS.map(([l]) => `<span>${l}</span>`).join('')}</div>`;
+}
+function reportRow(title, chip, m, t, comment, extra) {
+  return `<article class="rp-row ${extra || ''}">
+    <div class="rp-name"><b>${esc(title)}</b>${chip ? `<span class="chip">${esc(chip)}</span>` : ''}</div>
+    <div class="rp-cell rp-profit ${status(m.profit, t.profit)}"><span class="k">粗利</span><span class="v">${man(m.profit)}<small>／${man(t.profit)}万円</small></span><span class="r">達成率 ${t.profit ? pct(m.profit / t.profit) : '—'}</span></div>
+    ${RP_COLS.map(([l, k]) => `<div class="rp-cell ${status(m[k], t[k])}"><span class="k">${l}</span><span class="v">${num(m[k])}<small>／${num(t[k])}</small></span></div>`).join('')}
+    <div class="rp-fb">${comment ? esc(comment) : '<span class="note">フィードバックはまだありません</span>'}</div>
+  </article>`;
+}
+
+function renderReport() {
+  const ym = state.month;
+  const list = reportPeople(ym);
+  if (!list.length) {
+    return `<div class="msg"><b>${ymLabel(ym)}の成績表はありません</b>目標設定シートにこの月の目標が登録されると表示されます。</div>`;
+  }
+  const fb = (state.data.feedback || {})[ym] || { overall: '', stores: {}, people: {} };
+  const stores = [...new Set(list.map(p => p.store))];
+  const storeRows = stores.map(st => {
+    const members = list.filter(p => p.store === st);
+    const { m, t } = aggregate(members);
+    return reportRow(st, members.length + '名', m, t, fb.stores[st]);
+  }).join('');
+  const all = aggregate(list);
+  const ppl = list.filter(p => !state.rpStore || p.store === state.rpStore);
+
+  return `<p class="note" style="margin:0 0 12px">${ymLabel(ym)}の成績です。各項目は「実績／目標」で、緑は目標達成、赤は未達です。成績表の対象は、目標が設定されていてこの月に活動があった担当者です。</p>
+  <section class="rp">
+    <div class="rp-title"><h2>店舗別成績表</h2></div>
+    ${reportHead('店舗')}
+    ${storeRows}
+    ${reportRow('全体', list.length + '名', all.m, all.t, fb.overall, 'total')}
+  </section>
+  <section class="rp">
+    <div class="rp-title"><h2>個人別成績表</h2>
+      <select id="rpStoreSel" aria-label="店舗で絞り込む"><option value="">すべての店舗</option>${stores.map(s => `<option ${s === state.rpStore ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>
+    </div>
+    ${reportHead('担当者')}
+    ${ppl.map(p => reportRow(p.name, p.store, metrics(p), p.target, fb.people[p.name])).join('')}
+  </section>`;
+}
+
 function emptyMonth() {
   return `<div class="msg"><b>${ymLabel(state.month)}のデータはまだありません</b>月別集計シートに入力されると表示されます。</div>`;
 }
@@ -497,7 +592,8 @@ function render() {
   $('#prev').disabled = i <= 0;
   $('#next').disabled = i >= d.months.length - 1;
   document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === state.tab)));
-  $('#view').innerHTML = state.tab === 'overall' ? renderOverall() : state.tab === 'stores' ? renderStores() : renderPeople();
+  const views = { overall: renderOverall, stores: renderStores, people: renderPeople, report: renderReport };
+  $('#view').innerHTML = views[state.tab]();
 }
 
 function setMonth(ym) {
@@ -528,6 +624,7 @@ function bind() {
   $('#view').addEventListener('change', e => {
     if (e.target.id === 'storeSel') { state.store = e.target.value; render(); }
     if (e.target.id === 'sortSel') { state.sort = e.target.value; render(); }
+    if (e.target.id === 'rpStoreSel') { state.rpStore = e.target.value; render(); }
   });
 }
 
